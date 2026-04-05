@@ -36,6 +36,7 @@ local files = {
     "Recipes/Blacksmithing.lua",
     "Recipes/Cooking.lua",
     "Recipes/Enchanting.lua",
+    "Recipes/Alchemy.lua",
     "Recipes/Engineering.lua",
     "Recipes/JewelCrafting.lua",
     "Recipes/LeatherWorking.lua",
