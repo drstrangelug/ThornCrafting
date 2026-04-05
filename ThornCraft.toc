@@ -1,0 +1,10 @@
+## Interface: 120000
+## Title: ThornCraft
+## Author: LugTools Developer
+## Version: 1.0.0
+## Notes: Tooltips and profession scans for reagent crafting
+## SavedVariables: ThornCraftCache
+## SavedVariablesPerCharacter: ThornCraftOptions
+
+Data.lua
+Core.lua

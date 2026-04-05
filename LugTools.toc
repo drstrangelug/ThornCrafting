@@ -1,0 +1,10 @@
+## Interface: 120000
+## Title: LugTools
+## Author: LugTools Developer
+## Version: 1.0.0
+## Notes: A simple addon displaying character money in a moveable window
+## SavedVariables: LugToolsDB
+
+LugTools.lua
+Data.lua
+Core.lua
