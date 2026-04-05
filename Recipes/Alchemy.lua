@@ -3433,4 +3433,4 @@ local recipes = {
     },
 }
 
-ns.HerbalismRecipes = recipes
+ns.AlchemyRecipes = recipes

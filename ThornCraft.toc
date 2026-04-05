@@ -12,7 +12,7 @@ Recipes\Cooking.lua
 Recipes\Enchanting.lua
 Recipes\Engineering.lua
 Recipes\FirstAid.lua
-Recipes\Herbalism.lua
+Recipes\Alchemy.lua
 Recipes\JewelCrafting.lua
 Recipes\LeatherWorking.lua
 Recipes\Mining.lua
