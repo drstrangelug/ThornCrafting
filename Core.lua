@@ -47,9 +47,9 @@ end
 -- State Coloring Logic
 local function GetRecipeColor(isKnownProf, isLearned)
     if isKnownProf and isLearned then
-        return ConvertColor(255,255,255) -- White: Trained & Learned
+        return ConvertColor(128,255,128) -- White: Trained & Learned
     elseif isKnownProf then
-        return ConvertColor(191,91,31) -- Orange: Trained but NOT learned
+        return ConvertColor(255, 180, 0) -- Orange: Trained but NOT learned
     else
         return ConvertColor(128,128,128) -- Gray: Untrained  
     end
@@ -64,7 +64,7 @@ local function OnTooltipSetItem(tooltip, data)
 
     if recipes then
         tooltip:AddLine(" ")
-        tooltip:AddLine("Used In:", 1, 0.82, 0)
+        tooltip:AddLine("Used In:", 1, 1, 1)
 
         for _, recipeData in ipairs(recipes) do
             local isKnownProf = ThornCraftCache.KnownProfessions[recipeData.prof]
@@ -81,7 +81,7 @@ local function OnTooltipSetItem(tooltip, data)
             -- Filter by Options
             if isKnownProf or ThornCraftOptions.showUntrained then
                 local r, g, b = GetRecipeColor(isKnownProf, isLearned)
-                local status = isLearned and "" or " (Missing)"
+                local status = isLearned and "" or " (unlearned)"
                 tooltip:AddLine("  • " .. recipeData.name .. status, r, g, b)
             end
         end
