@@ -22,7 +22,7 @@ end
 local ns = {}
 
 -- Load Constants (Reads from the root folder now)
-local constantsChunk, err = loadfile("Recipes/Constants.lua")
+local constantsChunk, err = loadfile("Constants.lua")
 if constantsChunk then
     constantsChunk("ThornCraft", ns)
 else
@@ -76,10 +76,25 @@ for _, source in ipairs(sources) do
                 for _, reagent in ipairs(recipe.reagents) do
                     local rID = reagent.itemId
                     ReagentMap[rID] = ReagentMap[rID] or {}
+                    
+                    -- Grab the gray level safely, default to nil if it doesn't exist
+                    local grayLevel = (recipe.skillRange and recipe.skillRange.gray) or nil
+
+                    -- Double check the table name matches what you have in Constants.lua!
+                    local expKey = recipe.expansion or ns.Constants.EXPANSION.VANILLA
+                    local expansionMap = ns.Constants.SKILL_LINE_IDS[source.prof] 
+                    local specificSkillLineID = nil
+                    if expansionMap then
+                        specificSkillLineID = expansionMap[expKey] or expansionMap[ns.Constants.EXPANSION.VANILLA]
+                    end
+
                     table.insert(ReagentMap[rID], {
                         id = recipe.id,
                         name = recipe.name,
-                        prof = source.prof
+                        baseProf = source.prof,          -- KEEP THIS: For Options menu and Fallback Icons (171)
+                        prof = specificSkillLineID,      -- NEW: For your specific expansion skill check (2485)
+                        expansion = expKey,              -- NEW: Expansion key (1)
+                        gray = grayLevel                 
                     })
                 end
             end
@@ -97,7 +112,21 @@ if out then
     for reagentID, recipes in pairs(ReagentMap) do
         out:write("    [" .. reagentID .. "] = {\n")
         for _, r in ipairs(recipes) do
-            out:write(string.format("        { id = %d, name = %q, prof = %d },\n", r.id, r.name, r.prof))
+            -- Format the gray value so it prints the number, or "nil" if it doesn't have one
+            local grayStr = r.gray and tostring(r.gray) or "nil"
+            
+            -- Convert potentially nil values to strings so string.format doesn't crash
+            local profStr = r.prof and tostring(r.prof) or "nil"
+            local expStr = r.expansion and tostring(r.expansion) or "nil"
+            local grayStr = r.gray and tostring(r.gray) or "nil"
+
+            out:write(string.format("        { id = %d, name = %q, baseProf = %d, prof = %s, expansion = %s, gray = %s },\n", 
+                r.id, 
+                r.name, 
+                r.baseProf, 
+                profStr, 
+                expStr, 
+                grayStr))
         end
         out:write("    },\n")
     end
@@ -136,8 +165,16 @@ local function copyFile(sourcePath, destPath)
 end
 
 -- Copy everything into the flat Release/ThornCraft folder
-copyFile("ThornCraft.toc", "Release/ThornCraft/ThornCraft.toc")
-copyFile("Core.lua", "Release/ThornCraft/Core.lua")
-copyFile("ReagentIndex.lua", "Release/ThornCraft/ReagentIndex.lua")
+sourceFiles ={
+    "ThornCraft.toc",
+    "Core.lua",
+    "Constants.lua",
+    "Options.lua",
+    "Professions.lua",
+    "ReagentIndex.lua"
+}
+for _, file in ipairs(sourceFiles) do
+    copyFile(file, "Release/ThornCraft/" .. file)
+end
 
 print("\n[DONE] Build Complete! The 'Release/ThornCraft' folder is clean and ready to zip.")

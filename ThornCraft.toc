@@ -3,10 +3,12 @@
 ## Author: Paul Loveridge a.k.a. DrStrangeLug
 ## Version: 1.0.0
 ## Notes: Tooltips and profession scans for reagent crafting
-## SavedVariables: ThornCraftCache
+## SavedVariables: ThornCraftCache ThornCraft_DataDump
 ## SavedVariablesPerCharacter: ThornCraftOptions
 ## IconTexture: 134327
 
+Constants.lua
 ReagentIndex.lua
-Recipes\Constants.lua
+Options.lua
+Professions.lua
 Core.lua
