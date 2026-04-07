@@ -82,8 +82,15 @@ local function BuildGeneralPanel(parentCategory)
     CreateColorButton(panel, "Learned", 120, -108, "learned")
     CreateColorButton(panel, "Unlearned", 210, -108, "unlearned")
     CreateColorButton(panel, "Untrained", 310, -108, "untrained")
+    
+    -- Failsafe for the new color
+    ThornCraftOptions = ThornCraftOptions or {}
+    ThornCraftOptions.colors = ThornCraftOptions.colors or {}
+    ThornCraftOptions.colors.sell = ThornCraftOptions.colors.sell or { r = 1.0, g = 0.82, b = 0.0 }
+    
+    CreateColorButton(panel, "Sell", 410, -108, "sell")
 
-    -- Register as a subcategory of the main ThornCraft node
+    -- MISSING LINE RESTORED HERE:
     Settings.RegisterCanvasLayoutSubcategory(parentCategory, panel, "General")
 end
 
@@ -199,7 +206,8 @@ frame:SetScript("OnEvent", function(self, event, arg1)
         ThornCraftOptions.colors = ThornCraftOptions.colors or {
             learned = { r = 0.5, g = 1.0, b = 0.5 },    
             unlearned = { r = 1.0, g = 0.7, b = 0.0 },  
-            untrained = { r = 0.5, g = 0.5, b = 0.5 }   
+            untrained = { r = 0.5, g = 0.5, b = 0.5 },
+            sell = { r = .9, g = 0.9, b = 0.9 }
         }
 
         if ThornCraftOptions.showDebug == nil then ThornCraftOptions.showDebug = true end
