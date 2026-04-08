@@ -1,6 +1,5 @@
 name: Build and Release Addon
 
-# This tells GitHub to only run this script when you push a new version tag (like v1.0.0)
 on:
   push:
     branches:
@@ -11,16 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # <-- THIS IS THE ONLY CHANGE!
         with:
-          fetch-depth: 0 # Required for the packager to read your git tags
+          fetch-depth: 0
 
       - name: Package and Release to CurseForge
         uses: BigWigsMods/packager@v2
-        with:
-          args: -r release
         env:
-          # This tells the packager to use the secret password you'll set up in Step 3
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
-          # This automatically creates a matching Release on your GitHub page too!
           GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
