@@ -3,8 +3,8 @@ name: Build and Release Addon
 # This tells GitHub to only run this script when you push a new version tag (like v1.0.0)
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - release
 
 jobs:
   release:
