@@ -2,6 +2,7 @@
 ## Title: ThornCraft
 ## Author: Paul Loveridge a.k.a. DrStrangeLug
 ## Version: 1.0.0
+## X-Curse-Project-ID: 7881011  
 ## Notes: Tooltips and profession scans for reagent crafting
 ## SavedVariables: ThornCraftCache ThornCraft_DataDump
 ## SavedVariablesPerCharacter: ThornCraftOptions
@@ -11,4 +12,5 @@ Constants.lua
 ReagentIndex.lua
 Options.lua
 Professions.lua
+SellButton.lua
 Core.lua

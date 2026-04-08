@@ -195,11 +195,17 @@ end
 -- ==========================================
 -- Variable Initialization Event
 -- ==========================================
+-- ==========================================
+-- Variable Initialization & Login Events
+-- ==========================================
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("ADDON_LOADED")
+frame:RegisterEvent("PLAYER_LOGIN") -- NEW: Wait for character data!
+
 frame:SetScript("OnEvent", function(self, event, arg1)
+    
+    -- STEP 1: Addon loads. Set up the empty tables and raw defaults.
     if event == "ADDON_LOADED" and arg1 == ADDON_NAME then
-        
         ThornCraftOptions = ThornCraftOptions or {}
         ThornCraftOptions.professions = ThornCraftOptions.professions or {} 
         
@@ -210,17 +216,39 @@ frame:SetScript("OnEvent", function(self, event, arg1)
             sell = { r = .9, g = 0.9, b = 0.9 }
         }
 
-        if ThornCraftOptions.showDebug == nil then ThornCraftOptions.showDebug = true end
+        if ThornCraftOptions.showDebug == nil then ThornCraftOptions.showDebug = false end
         if ThornCraftOptions.showUnlearnedText == nil then ThornCraftOptions.showUnlearnedText = true end
 
+    -- STEP 2: Player enters the world. Character data is now safe to read!
+    elseif event == "PLAYER_LOGIN" then
+        local activeProfIDs = {}
+        
+        -- By wrapping the function in {} and using pairs, it perfectly 
+        -- captures all professions, even if there are empty slots between them!
+        local profs = { GetProfessions() } 
+
+        for _, profIndex in pairs(profs) do
+            local _, _, _, _, _, _, skillLine = GetProfessionInfo(profIndex)
+            if skillLine then 
+                activeProfIDs[skillLine] = true 
+            end
+        end
+
+        -- Build the profession defaults based on actual character skills
         for _, prof in ipairs(ns.Constants.PROFESSIONS_LIST) do
             if not ThornCraftOptions.professions[prof.id] then
-                ThornCraftOptions.professions[prof.id] = { show = true, onlyLearned = false, showAlt = false }
+                local playerHasSkill = activeProfIDs[prof.id] or false
+                ThornCraftOptions.professions[prof.id] = { 
+                    show = playerHasSkill, 
+                    onlyLearned = false, 
+                    showAlt = false 
+                }
             elseif ThornCraftOptions.professions[prof.id].showAlt == nil then
                 ThornCraftOptions.professions[prof.id].showAlt = false
             end
         end
 
+        -- NOW build the menu, using the accurate data
         BuildOptionsMenu()
     end
 end)

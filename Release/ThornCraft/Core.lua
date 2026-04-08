@@ -104,8 +104,8 @@ local function OnTooltipSetItem(tooltip, data)
             tooltip:AddLine(" ")
             tooltip:AddLine("Used In:", 1, 1, 1)
 
-            -- NEW: Assume everything is trivial until we find one that isn't
-            local allTrivial = true 
+            -- NEW: Use our shared method!
+            local allTrivial = ns.AreAllRecipesTrivial(validRecipesToPrint) 
 
             for _, item in ipairs(validRecipesToPrint) do
                 local r, g, b = GetRecipeColor(item.isKnown, item.isLearned)
@@ -113,13 +113,9 @@ local function OnTooltipSetItem(tooltip, data)
                 -- Override with Gray if the recipe is trivial
                 if item.isTrivial then
                     r, g, b = 0.5, 0.5, 0.5
-                else
-                    -- If even one recipe gives experience, flag it as false!
-                    allTrivial = false
                 end
                 
                 local status = ""
-                -- We removed the item.isTrivial check from here
                 if not item.isLearned and ThornCraftOptions.showUnlearnedText then
                     status = " (unlearned)"
                 end
@@ -137,10 +133,10 @@ local function OnTooltipSetItem(tooltip, data)
                 tooltip:AddLine(prefix .. item.data.name .. status .. crafterText, r, g, b)
             end
 
-            -- NEW: If the loop finished and every recipe was trivial, print the summary
+            -- Print the summary if the helper function returned true
             if allTrivial then
                 local sellColor = ThornCraftOptions.colors.sell or { r = 1, g = 0.82, b = 0 }
-                tooltip:AddLine("  |TInterface\\MoneyFrame\\UI-GoldIcon:14:14:0:0|t You can sell this",sellColor.r, sellColor.g, sellColor.b)
+                tooltip:AddLine("  |TInterface\\MoneyFrame\\UI-GoldIcon:14:14:0:0|t You can sell this", sellColor.r, sellColor.g, sellColor.b)
             end
         end
     end

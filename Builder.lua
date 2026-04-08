@@ -171,7 +171,9 @@ sourceFiles ={
     "Constants.lua",
     "Options.lua",
     "Professions.lua",
-    "ReagentIndex.lua"
+    "ReagentIndex.lua",
+    "SellButton.lua",
+    "SellOutdatedIcon.tga"
 }
 for _, file in ipairs(sourceFiles) do
     copyFile(file, "Release/ThornCraft/" .. file)

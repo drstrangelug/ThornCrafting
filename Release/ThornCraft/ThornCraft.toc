@@ -11,4 +11,5 @@ Constants.lua
 ReagentIndex.lua
 Options.lua
 Professions.lua
+SellButton.lua
 Core.lua

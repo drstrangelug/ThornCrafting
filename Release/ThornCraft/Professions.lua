@@ -118,3 +118,21 @@ function ns.GetValidRecipesToPrint(recipes)
     
     return validRecipesToPrint
 end
+
+-- ==========================================
+-- Trivial Recipe Check
+-- ==========================================
+function ns.AreAllRecipesTrivial(validRecipes)
+    -- Failsafe: if there are no recipes, it can't be a trivial reagent
+    if not validRecipes or #validRecipes == 0 then return false end
+    
+    for _, item in ipairs(validRecipes) do
+        -- The moment we find even ONE recipe that grants skill, return false!
+        if not item.isTrivial then
+            return false
+        end
+    end
+    
+    -- If the loop finishes without returning false, everything is trivial
+    return true
+end
