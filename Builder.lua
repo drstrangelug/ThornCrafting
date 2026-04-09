@@ -170,6 +170,7 @@ sourceFiles ={
     "Core.lua",
     "Constants.lua",
     "Options.lua",
+    "DataCache.lua",
     "Professions.lua",
     "ReagentIndex.lua",
     "SellButton.lua",

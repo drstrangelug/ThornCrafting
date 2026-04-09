@@ -58,13 +58,6 @@ local FallbackIcons = {
     [129] = 135966, -- First Aid (Spell_Holy_SealOfSacrifice)
 }
 
--- Global Cache
-ThornCraftCache = ThornCraftCache or {
-    Professions = {},
-    KnownProfessions = {},
-    Initialized = false
-}
-
 -- IDs (Added missing ones for your source list)
 local BLACKSMITHING, ENGINEERING, ALCHEMY = 164, 202, 171
 local LEATHERWORKING, TAILORING, JEWELCRAFTING = 165, 197, 755
@@ -152,11 +145,15 @@ eventFrame:RegisterEvent("TRADE_SKILL_SHOW")
 
 -- Define what happens when the frame "hears" an event
 eventFrame:SetScript("OnEvent", function(self, event, ...)
+    -- 1. Grab this specific character's data folder using the function from DataCache.lua!
+    local playerData = ns:InitPlayerCache()
+
     if event == "PLAYER_ENTERING_WORLD" then
         ns.ScanProfessions()
         
     elseif event == "SKILL_LINES_CHANGED" or event == "TRADE_SKILL_SHOW" then
-        if ThornCraftCache and ThornCraftCache.Initialized then
+        -- 2. Check if THIS character's data is initialized, not the global cache
+        if playerData and playerData.Initialized then
             ns.ScanProfessions()
             ns.DebugPrint("ThornCraft: Event " .. event .. " fired, recalculating skills.")
         end

@@ -9,6 +9,7 @@
 ## IconTexture: 134327
 
 Constants.lua
+DataCache.lua
 ReagentIndex.lua
 Options.lua
 Professions.lua
