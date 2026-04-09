@@ -84,7 +84,12 @@ function ns.GetValidRecipesToPrint(recipes)
             -- 2. Look up the skill level inside that specific expansion folder
             local skillLevel = nil
             if playerData.KnownProfessions[recipeData.prof] then
-                skillLevel = playerData.KnownProfessions[recipeData.prof][expKey]
+                local skillData = playerData.KnownProfessions[recipeData.prof][expKey]
+                
+                -- Extract the actual number out of our new data table!
+                if skillData and skillData.level then
+                    skillLevel = skillData.level
+                end
             end
             
             local isKnownProf = (skillLevel ~= nil)
