@@ -90,22 +90,27 @@ local function OnTooltipSetItem(tooltip, data)
     local recipes = ns.ReagentToRecipeMap[itemID]
 
     if recipes then
-        local validRecipesToPrint = ns.GetValidRecipesToPrint(recipes)
+        -- 1. Grab ONLY the current player's valid recipes
+        local validRecipesToPrint = ns.GetCurrentPlayerRecipes(recipes)
 
         -- Print to screen
         if #validRecipesToPrint > 0 then
             tooltip:AddLine(" ")
             tooltip:AddLine("Used In:", 1, 1, 1)
 
-            -- NEW: Use our shared method!
-            local allTrivial = ns.AreAllRecipesTrivial(validRecipesToPrint) 
+            -- Track if all recipes are gray/trivial for the current player
+            local allTrivial = true 
 
             for _, item in ipairs(validRecipesToPrint) do
-                local r, g, b = GetRecipeColor(item.isKnown, item.isLearned)
+                -- Since the list only contains professions the player actually has, isKnown is true
+                local r, g, b = GetRecipeColor(true, item.isLearned)
                 
                 -- Override with Gray if the recipe is trivial
                 if item.isTrivial then
                     r, g, b = 0.5, 0.5, 0.5
+                else
+                    -- If it grants the player a skill point, we should not tell them to sell it
+                    allTrivial = false 
                 end
                 
                 local status = ""
@@ -113,20 +118,15 @@ local function OnTooltipSetItem(tooltip, data)
                     status = " (unlearned)"
                 end
                 
-                local crafterText = ""
-                if item.isKnown and item.crafters ~= "" then
-                    crafterText = " [" .. item.crafters .. "]"
-                end
-
                 local profIcon = C_TradeSkillUI and C_TradeSkillUI.GetTradeSkillTexture(item.data.baseProf)
                 if not profIcon then profIcon = FallbackIcons[item.data.baseProf] end
 
                 local prefix = profIcon and ("  |T" .. profIcon .. ":14:14:0:0:64:64:4:60:4:60|t ") or "  • "
                 
-                tooltip:AddLine(prefix .. item.data.name .. status .. crafterText, r, g, b)
+                tooltip:AddLine(prefix .. item.data.name .. status, r, g, b)
             end
 
-            -- Print the summary if the helper function returned true
+            -- Print the summary ONLY if everything in the list is gray/trivial
             if allTrivial then
                 local sellColor = ThornCraftOptions.colors.sell or { r = 1, g = 0.82, b = 0 }
                 tooltip:AddLine("  |TInterface\\MoneyFrame\\UI-GoldIcon:14:14:0:0|t You can sell this", sellColor.r, sellColor.g, sellColor.b)

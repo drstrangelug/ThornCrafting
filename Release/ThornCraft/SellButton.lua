@@ -72,23 +72,37 @@ local function GetTrivialReagents()
             
             if itemID then
                 local recipes = ns.ReagentToRecipeMap[itemID]
+                
                 if recipes then
-                    local validRecipes = ns.GetValidRecipesToPrint(recipes)
+                    local validRecipesToPrint = ns.GetCurrentPlayerRecipes(recipes)
                     
-                    -- NEW: Pass the list directly to our helper function
-                    if ns.AreAllRecipesTrivial(validRecipes) then
-                        local _, _, _, _, _, _, _, _, _, _, itemSellPrice = C_Item.GetItemInfo(itemID)
+                    -- MUST have recipes in the list (meaning the player actually has the profession)
+                    if #validRecipesToPrint > 0 then
+                        local allTrivial = true
                         
-                        if itemSellPrice and itemSellPrice > 0 then
-                            local stackInfo = C_Container.GetContainerItemInfo(bag, slot)
-                            local stackCount = stackInfo and stackInfo.stackCount or 1
+                        -- Check every recipe in the list
+                        for _, item in ipairs(validRecipesToPrint) do
+                            if not item.isTrivial then
+                                allTrivial = false
+                                break -- We found a skill-up, stop checking this item!
+                            end
+                        end
+                        
+                        -- If the player has the profession, and ALL recipes for this item are grey:
+                        if allTrivial then
+                            local _, _, _, _, _, _, _, _, _, _, itemSellPrice = C_Item.GetItemInfo(itemID)
                             
-                            table.insert(itemsToSell, {
-                                bag = bag,
-                                slot = slot,
-                                price = itemSellPrice,
-                                count = stackCount
-                            })
+                            if itemSellPrice and itemSellPrice > 0 then
+                                local stackInfo = C_Container.GetContainerItemInfo(bag, slot)
+                                local stackCount = stackInfo and stackInfo.stackCount or 1
+                                
+                                table.insert(itemsToSell, {
+                                    bag = bag,
+                                    slot = slot,
+                                    price = itemSellPrice,
+                                    count = stackCount
+                                })
+                            end
                         end
                     end
                 end

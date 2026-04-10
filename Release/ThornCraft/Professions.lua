@@ -64,83 +64,91 @@ end
 -- Professions.lua
 
 -- Create a function to filter and validate recipes based on user settings and skill levels
-function ns.GetValidRecipesToPrint(recipes)
-    local validRecipesToPrint = {}
+-- ==========================================
+-- Recipe Validation (Single Character)
+-- ==========================================
+function ns.GetValidRecipesForCharacter(recipes, charKey)
+    local validRecipes = {}
+    
+    -- Failsafe: Make sure the cache and character exist
+    if not ThornCraftCache or type(ThornCraftCache[charKey]) ~= "table" then
+        return validRecipes
+    end
+    
+    local charData = ThornCraftCache[charKey]
+    local isCurrentPlayer = (charKey == ns:GetPlayerKey())
 
     for _, recipeData in ipairs(recipes) do
-        local profOpt = ThornCraftOptions.professions[recipeData.prof]
-        
-        -- Fallback to true if something went wrong
+        -- USE baseProf FOR LOOKUPS! 
+        -- If baseProf is missing for some reason, fallback to prof just in case.
+        local lookupID = recipeData.baseProf or recipeData.prof
+
+        -- 1. UI Settings
+        local profOpt = ThornCraftOptions.professions[lookupID]
         local shouldShow = profOpt and profOpt.show or false
         if profOpt == nil then shouldShow = true end 
 
         if shouldShow then
-            -- 1. Determine which expansion this specific recipe belongs to
             local expKey = recipeData.expansion or ns.Constants.EXPANSION.VANILLA
-            
-            -- Grab the current player's data to check their skills
-            local playerData = ns:InitPlayerCache()
-
-            -- 2. Look up the skill level inside that specific expansion folder
             local skillLevel = nil
-            if playerData.KnownProfessions[recipeData.prof] then
-                local skillData = playerData.KnownProfessions[recipeData.prof][expKey]
-                
-                -- Extract the actual number out of our new data table!
+            
+            -- 2. Character Skill Lookup
+            if charData.KnownProfessions and charData.KnownProfessions[lookupID] then
+                local skillData = charData.KnownProfessions[lookupID][expKey]
                 if skillData and skillData.level then
                     skillLevel = skillData.level
                 end
             end
-            
-            local isKnownProf = (skillLevel ~= nil)
-            local knownByNames = ""
 
-            -- 3. Update the Alt-tracker to also check the specific expansion folder!
-            if profOpt and profOpt.showAlt and ThornCraftCache.AltProfessions then
-                for altName, altProfs in pairs(ThornCraftCache.AltProfessions) do
-                    if altProfs[recipeData.prof] and altProfs[recipeData.prof][expKey] then
-                        isKnownProf = true
-                        local shortName = strsplit("-", altName)
-                        knownByNames = knownByNames == "" and shortName or (knownByNames .. ", " .. shortName)
+            -- 3. The Filter 
+            if skillLevel ~= nil then
+                local isLearned = false
+                
+                -- Verify learned status for the active character
+                if isCurrentPlayer and recipeData.id then
+                    local info = C_TradeSkillUI.GetRecipeInfo(recipeData.id)
+                    if info and info.learned then
+                        isLearned = true
                     end
                 end
-            end
 
-            local isLearned = false
-            if isKnownProf and recipeData.id then
-                local info = C_TradeSkillUI.GetRecipeInfo(recipeData.id)
-                if info and info.learned then
-                    isLearned = true
+                local isTrivial = false
+                if recipeData.gray and (skillLevel >= recipeData.gray) then
+                    isTrivial = true
                 end
-            end
 
-            -- NEW: Check if the recipe is completely grayed out for the current character
-            local isTrivial = false
-            if skillLevel and recipeData.gray and (skillLevel >= recipeData.gray) then
-                isTrivial = true
-            end
+                local requireLearned = profOpt and profOpt.onlyLearned or false
+                local passFilter = true
+                
+                if requireLearned and isCurrentPlayer and not isLearned then
+                    passFilter = false
+                end
 
-            local requireLearned = profOpt and profOpt.onlyLearned or false
-            local passFilter = true
-            
-            if requireLearned and not isLearned then
-                passFilter = false
-            end
-
-            if passFilter then
-                table.insert(validRecipesToPrint, { 
-                    data = recipeData, 
-                    isKnown = isKnownProf, 
-                    isLearned = isLearned,
-                    isTrivial = isTrivial,
-                    skillLevel = skillLevel and skillLevel or 0,
-                    crafters = knownByNames or ""
-                })
+                -- 4. Save to Payload
+                if passFilter then
+                    table.insert(validRecipes, { 
+                        data = recipeData, 
+                        isLearned = isLearned,
+                        isTrivial = isTrivial,
+                        skillLevel = skillLevel
+                    })
+                end
             end
         end
     end
     
-    return validRecipesToPrint
+    return validRecipes
+end
+
+-- ==========================================
+-- Recipe Validation (Current Player Helper)
+-- ==========================================
+function ns.GetCurrentPlayerRecipes(recipes)
+    -- 1. Grab the current player's unique key (e.g., "ThornHeart-Korgall")
+    local currentPlayerKey = ns:GetPlayerKey()
+    
+    -- 2. Pass the recipes and the key into our newly refactored engine
+    return ns.GetValidRecipesForCharacter(recipes, currentPlayerKey)
 end
 
 -- ==========================================
