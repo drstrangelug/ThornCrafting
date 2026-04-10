@@ -135,6 +135,9 @@ local function OnTooltipSetItem(tooltip, data)
     end
 end
 
+-- Create a local variable to hold our active timer
+local scanTimer = nil
+
 -- Create an invisible frame to listen for background game events
 local eventFrame = CreateFrame("Frame")
 
@@ -149,13 +152,26 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
     local playerData = ns:InitPlayerCache()
 
     if event == "PLAYER_ENTERING_WORLD" then
+        -- We usually want the initial login scan to happen immediately
         ns.ScanProfessions()
         
     elseif event == "SKILL_LINES_CHANGED" or event == "TRADE_SKILL_SHOW" then
         -- 2. Check if THIS character's data is initialized, not the global cache
         if playerData and playerData.Initialized then
-            ns.ScanProfessions()
-            ns.DebugPrint("ThornCraft: Event " .. event .. " fired, recalculating skills.")
+            
+            -- THE DEBOUNCE:
+            -- If a timer is already ticking because an event fired 0.1 seconds ago, cancel it!
+            if scanTimer then
+                scanTimer:Cancel()
+            end
+            
+            -- Start a fresh 0.5 second timer. 
+            -- If the game stops spamming events, this will finally reach 0 and run the scan.
+            scanTimer = C_Timer.NewTimer(0.5, function()
+                ns.ScanProfessions()
+                ns.DebugPrint("ThornCraft: Event spam settled. Recalculating skills.")
+            end)
+            
         end
     end
 end)
