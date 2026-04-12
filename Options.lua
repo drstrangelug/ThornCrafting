@@ -115,7 +115,7 @@ local function BuildProfessionsPanel(parentCategory)
 
     local subtitle = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
-    subtitle:SetText("Configure which professions to show, if they require training, and if Alts should be included.")
+    subtitle:SetText("Configure which professions to show and if they require training.")
 
     local header1 = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     header1:SetPoint("TOPLEFT", 10, -45) 
@@ -124,10 +124,6 @@ local function BuildProfessionsPanel(parentCategory)
     local header2 = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     header2:SetPoint("TOPLEFT", 170, -45) 
     header2:SetText("Only Learned")
-
-    local header3 = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    header3:SetPoint("TOPLEFT", 310, -45) 
-    header3:SetText("Include Alts")
 
     local yOffset = -70 
 
@@ -146,13 +142,8 @@ local function BuildProfessionsPanel(parentCategory)
         cbLearned:SetPoint("TOPLEFT", 170, yOffset)
         cbLearned:SetChecked(opt.onlyLearned)
 
-        local cbAlt = CreateFrame("CheckButton", nil, scrollChild, "UICheckButtonTemplate")
-        cbAlt:SetPoint("TOPLEFT", 310, yOffset)
-        cbAlt:SetChecked(opt.showAlt)
-
         cbShow:SetScript("OnClick", function(self) opt.show = self:GetChecked() end)
         cbLearned:SetScript("OnClick", function(self) opt.onlyLearned = self:GetChecked() end)
-        cbAlt:SetScript("OnClick", function(self) opt.showAlt = self:GetChecked() end)
 
         yOffset = yOffset - 35
     end
@@ -161,6 +152,120 @@ local function BuildProfessionsPanel(parentCategory)
 
     -- Register as a subcategory of the main ThornCraft node
     Settings.RegisterCanvasLayoutSubcategory(parentCategory, panel, "Professions")
+end
+
+-- ==========================================
+-- Sub-Panel: Alts
+-- ==========================================
+local function BuildAltsPanel(parentCategory)
+    local panel = CreateFrame("Frame", "ThornCraftAltsPanel")
+    
+    local scrollFrame = CreateFrame("ScrollFrame", "ThornCraftAltsScrollFrame", panel, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetPoint("TOPLEFT", 10, -10)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -30, 10) 
+
+    local scrollChild = CreateFrame("Frame", "ThornCraftAltsScrollChild", scrollFrame)
+    scrollChild:SetSize(600, 100) 
+    scrollFrame:SetScrollChild(scrollChild)
+
+    local title = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", 6, -6)
+    title:SetText("Alt Tracking")
+
+    local subtitle = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
+    subtitle:SetText("Configure Alt tracking and tooltip display.")
+
+    -- Main Checkbox
+    local cbShowAlt = CreateFrame("CheckButton", nil, scrollChild, "UICheckButtonTemplate")
+    cbShowAlt:SetPoint("TOPLEFT", 10, -45)
+    cbShowAlt:SetChecked(ThornCraftOptions.alts.showAlt)
+    
+    local cbShowAltText = cbShowAlt:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    cbShowAltText:SetPoint("LEFT", cbShowAlt, "RIGHT", 4, 1)
+    cbShowAltText:SetText("Show Alt Needs in Tooltip")
+    
+    cbShowAlt:SetScript("OnClick", function(self) ThornCraftOptions.alts.showAlt = self:GetChecked() end)
+
+    -- Max Display EditBox
+    local maxDisplayLabel = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    maxDisplayLabel:SetPoint("TOPLEFT", 300, -52)
+    maxDisplayLabel:SetText("Max Alts in Tooltip:")
+
+    local maxDisplayEdit = CreateFrame("EditBox", nil, scrollChild, "InputBoxTemplate")
+    maxDisplayEdit:SetSize(50, 20)
+    maxDisplayEdit:SetPoint("LEFT", maxDisplayLabel, "RIGHT", 10, 0)
+    maxDisplayEdit:SetAutoFocus(false)
+    maxDisplayEdit:SetNumeric(true)
+    
+    local currentMax = tonumber(ThornCraftOptions.alts.maxDisplay) or 3
+    if currentMax <= 0 then currentMax = 3 end -- Failsafe in case it saved as 0
+    ThornCraftOptions.alts.maxDisplay = currentMax
+    maxDisplayEdit:SetText(tostring(currentMax))
+    maxDisplayEdit:SetCursorPosition(0)
+    
+    maxDisplayEdit:SetScript("OnTextChanged", function(self, userInput)
+        if userInput then
+            local text = self:GetText()
+            if text ~= "" then
+                local val = self:GetNumber()
+                if val < 0 then val = 0 end
+                ThornCraftOptions.alts.maxDisplay = val
+            end
+        end
+    end)
+    maxDisplayEdit:SetScript("OnEditFocusLost", function(self)
+        if self:GetText() == "" then
+            self:SetNumber(3)
+            ThornCraftOptions.alts.maxDisplay = 3
+        end
+    end)
+    maxDisplayEdit:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
+    maxDisplayEdit:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+
+    -- List of Alts Header
+    local header = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    header:SetPoint("TOPLEFT", 10, -90) 
+    header:SetText("Tracked Characters:")
+
+    local yOffset = -115
+    local playerKey = ns.GetPlayerKey and ns:GetPlayerKey() or ""
+    
+    if type(ThornCraftCache) == "table" then
+        for charKey, _ in pairs(ThornCraftCache) do
+            if charKey ~= playerKey then
+                if ThornCraftOptions.alts.tracked[charKey] == nil then
+                    ThornCraftOptions.alts.tracked[charKey] = true
+                end
+
+                local cbChar = CreateFrame("CheckButton", nil, scrollChild, "UICheckButtonTemplate")
+                cbChar:SetPoint("TOPLEFT", 10, yOffset)
+                cbChar:SetChecked(ThornCraftOptions.alts.tracked[charKey])
+                
+                local shortName = strsplit("-", charKey) or charKey
+                local cbCharText = cbChar:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+                cbCharText:SetPoint("LEFT", cbChar, "RIGHT", 4, 1)
+                cbCharText:SetText(shortName)
+
+                cbChar:SetScript("OnClick", function(self) 
+                    ThornCraftOptions.alts.tracked[charKey] = self:GetChecked() 
+                end)
+
+                yOffset = yOffset - 35
+            end
+        end
+    end
+
+    if yOffset == -115 then
+        local noAlts = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontDisable")
+        noAlts:SetPoint("TOPLEFT", 15, yOffset)
+        noAlts:SetText("No other characters found in cache. Log into them first!")
+        yOffset = yOffset - 35
+    end
+
+    scrollChild:SetHeight(math.abs(yOffset) + 20)
+
+    Settings.RegisterCanvasLayoutSubcategory(parentCategory, panel, "Alts")
 end
 
 -- ==========================================
@@ -190,6 +295,7 @@ local function BuildOptionsMenu()
     -- Build and attach the children to the parent category
     BuildGeneralPanel(category)
     BuildProfessionsPanel(category)
+    BuildAltsPanel(category)
 end
 
 -- ==========================================
@@ -218,6 +324,11 @@ frame:SetScript("OnEvent", function(self, event, arg1)
 
         if ThornCraftOptions.showDebug == nil then ThornCraftOptions.showDebug = false end
         if ThornCraftOptions.showUnlearnedText == nil then ThornCraftOptions.showUnlearnedText = true end
+
+        ThornCraftOptions.alts = ThornCraftOptions.alts or {}
+        if ThornCraftOptions.alts.showAlt == nil then ThornCraftOptions.alts.showAlt = true end
+        if ThornCraftOptions.alts.maxDisplay == nil then ThornCraftOptions.alts.maxDisplay = 3 end
+        ThornCraftOptions.alts.tracked = ThornCraftOptions.alts.tracked or {}
 
     -- STEP 2: Player enters the world. Character data is now safe to read!
     elseif event == "PLAYER_LOGIN" then

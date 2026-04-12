@@ -168,3 +168,71 @@ function ns.AreAllRecipesTrivial(validRecipes)
     -- If the loop finishes without returning false, everything is trivial
     return true
 end
+
+-- ==========================================
+-- Alt Needed Item Check
+-- ==========================================
+function ns.GetAltsThatNeedItem(recipes)
+    local results = {}
+    local playerKey = ns:GetPlayerKey()
+
+    if type(ThornCraftCache) ~= "table" or not recipes then
+        return results
+    end
+
+    for charKey, charData in pairs(ThornCraftCache) do
+        -- Check if we are tracking this alt (defaults to true if not set)
+        local isTracked = true
+        if ThornCraftOptions and ThornCraftOptions.alts and ThornCraftOptions.alts.tracked then
+            if ThornCraftOptions.alts.tracked[charKey] == false then
+                isTracked = false
+            end
+        end
+
+        if charKey ~= playerKey and isTracked and type(charData) == "table" then
+            local neededProfs = {} 
+            local needsItem = false
+
+            for _, recipeData in ipairs(recipes) do
+                local lookupID = recipeData.baseProf or recipeData.prof
+                local expKey = recipeData.expansion or ns.Constants.EXPANSION.VANILLA
+                
+                if charData.KnownProfessions and charData.KnownProfessions[lookupID] and charData.KnownProfessions[lookupID][expKey] then
+                    local skillData = charData.KnownProfessions[lookupID][expKey]
+                    local skillLevel = skillData.level
+                    
+                    if skillLevel then
+                        local grantsSkill = false
+                        if recipeData.gray == nil then
+                            grantsSkill = true
+                        elseif skillLevel < recipeData.gray then
+                            grantsSkill = true
+                        end
+                        
+                        -- If they need it, record the profession ID!
+                        if grantsSkill then
+                            needsItem = true
+                            neededProfs[lookupID] = true 
+                        end
+                    end
+                end
+            end
+
+            -- If they needed it for at least one profession, format the data
+            if needsItem then
+                local shortName = strsplit("-", charKey)
+                local profList = {}
+                
+                -- Convert our dictionary of IDs into a simple list
+                for profID in pairs(neededProfs) do
+                    table.insert(profList, profID)
+                end
+                
+                -- Note the change here: 'profIDs' is now a list!
+                table.insert(results, { name = shortName, profIDs = profList })
+            end
+        end
+    end
+    
+    return results
+end

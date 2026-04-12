@@ -83,6 +83,86 @@ end
 -- ==========================================
 -- Tooltip Logic
 -- ==========================================
+local function AddCurrentPlayerRecipes(tooltip, validRecipesToPrint)
+    local allTrivial = true
+    tooltip:AddLine(" ")
+    tooltip:AddLine("Used In:", 1, 1, 1)
+
+    for _, item in ipairs(validRecipesToPrint) do
+        -- Since the list only contains professions the player actually has, isKnown is true
+        local r, g, b = GetRecipeColor(true, item.isLearned)
+        
+        -- Override with Gray if the recipe is trivial
+        if item.isTrivial then
+            r, g, b = 0.5, 0.5, 0.5
+        else
+            -- If it grants the player a skill point, we should not tell them to sell it
+            allTrivial = false 
+        end
+        
+        local status = ""
+        if not item.isLearned and ThornCraftOptions.showUnlearnedText then
+            status = " (unlearned)"
+        end
+        
+        local profIcon = C_TradeSkillUI and C_TradeSkillUI.GetTradeSkillTexture(item.data.baseProf)
+        if not profIcon then profIcon = FallbackIcons[item.data.baseProf] end
+
+        local prefix = profIcon and ("  |T" .. profIcon .. ":14:14:0:0:64:64:4:60:4:60|t ") or "  • "
+        
+        tooltip:AddLine(prefix .. item.data.name .. status, r, g, b)
+    end
+
+    return allTrivial
+end
+
+local function AddAltUsage(tooltip, recipes)
+    local altsWhoNeedIt = ns.GetAltsThatNeedItem(recipes)
+    local numAlts = #altsWhoNeedIt
+    local hasAlts = (numAlts > 0)
+
+    if hasAlts then
+        local formattedAlts = {}
+        local maxDisplay = 3
+        
+        for i = 1, math.min(numAlts, maxDisplay) do
+            local altData = altsWhoNeedIt[i]
+            local iconStr = ""
+            
+            -- Handle either profIDs (array) or profID (single)
+            local profIDs = altData.profIDs or { altData.profID }
+            for _, profID in ipairs(profIDs) do
+                local profIcon = C_TradeSkillUI and C_TradeSkillUI.GetTradeSkillTexture(profID)
+                if not profIcon and FallbackIcons then profIcon = FallbackIcons[profID] end
+                
+                if profIcon then
+                    -- Chain the icons side-by-side
+                    iconStr = iconStr .. "|T" .. profIcon .. ":14:14:0:0:64:64:4:60:4:60|t"
+                end
+            end
+            
+            -- Add a space after the icon chain if we found any
+            if iconStr ~= "" then iconStr = iconStr .. " " end
+            
+            -- Combine Icons + Cyan Name
+            table.insert(formattedAlts, iconStr .. "|cFF00CCFF" .. tostring(altData.name) .. "|r")
+        end
+
+        -- Join them with commas
+        local finalString = table.concat(formattedAlts, ", ")
+        
+        -- Tack on "and others" if we hit the limit
+        if numAlts > maxDisplay then
+            finalString = finalString .. ", and others"
+        end
+
+        -- Add it to the tooltip!
+        tooltip:AddLine("Usable by Alts: " .. finalString)
+    end
+    
+    return hasAlts
+end
+
 local function OnTooltipSetItem(tooltip, data)
     if not data or not data.id then return end
     
@@ -92,45 +172,25 @@ local function OnTooltipSetItem(tooltip, data)
     if recipes then
         -- 1. Grab ONLY the current player's valid recipes
         local validRecipesToPrint = ns.GetCurrentPlayerRecipes(recipes)
+        local allTrivial = true 
 
-        -- Print to screen
         if #validRecipesToPrint > 0 then
-            tooltip:AddLine(" ")
-            tooltip:AddLine("Used In:", 1, 1, 1)
-
-            -- Track if all recipes are gray/trivial for the current player
-            local allTrivial = true 
-
-            for _, item in ipairs(validRecipesToPrint) do
-                -- Since the list only contains professions the player actually has, isKnown is true
-                local r, g, b = GetRecipeColor(true, item.isLearned)
-                
-                -- Override with Gray if the recipe is trivial
-                if item.isTrivial then
-                    r, g, b = 0.5, 0.5, 0.5
-                else
-                    -- If it grants the player a skill point, we should not tell them to sell it
-                    allTrivial = false 
-                end
-                
-                local status = ""
-                if not item.isLearned and ThornCraftOptions.showUnlearnedText then
-                    status = " (unlearned)"
-                end
-                
-                local profIcon = C_TradeSkillUI and C_TradeSkillUI.GetTradeSkillTexture(item.data.baseProf)
-                if not profIcon then profIcon = FallbackIcons[item.data.baseProf] end
-
-                local prefix = profIcon and ("  |T" .. profIcon .. ":14:14:0:0:64:64:4:60:4:60|t ") or "  • "
-                
-                tooltip:AddLine(prefix .. item.data.name .. status, r, g, b)
+            allTrivial = AddCurrentPlayerRecipes(tooltip, validRecipesToPrint)
+        end
+        
+        local hasAlts = false
+        if ThornCraftOptions.alts.showAlt then
+            hasAlts = AddAltUsage(tooltip, recipes)
+            -- If an alt needs it, protect the item from the auto-sell button!
+            if hasAlts then
+                allTrivial = false 
             end
+        end
 
-            -- Print the summary ONLY if everything in the list is gray/trivial
-            if allTrivial then
-                local sellColor = ThornCraftOptions.colors.sell or { r = 1, g = 0.82, b = 0 }
-                tooltip:AddLine("  |TInterface\\MoneyFrame\\UI-GoldIcon:14:14:0:0|t You can sell this", sellColor.r, sellColor.g, sellColor.b)
-            end
+        -- Print the summary ONLY if everything in the list is gray/trivial
+        if allTrivial and #validRecipesToPrint > 0 then
+            local sellColor = ThornCraftOptions.colors.sell or { r = 1, g = 0.82, b = 0 }
+            tooltip:AddLine("  |TInterface\\MoneyFrame\\UI-GoldIcon:14:14:0:0|t You can sell this", sellColor.r, sellColor.g, sellColor.b)
         end
     end
 end
