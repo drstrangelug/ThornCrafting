@@ -80,7 +80,7 @@ local function GetTrivialReagents()
                     if #validRecipesToPrint > 0 then
                         local allTrivial = true
                         
-                        -- Check every recipe in the list
+                        -- Check every recipe in the list for the current player
                         for _, item in ipairs(validRecipesToPrint) do
                             if not item.isTrivial then
                                 allTrivial = false
@@ -88,7 +88,16 @@ local function GetTrivialReagents()
                             end
                         end
                         
-                        -- If the player has the profession, and ALL recipes for this item are grey:
+                        -- NEW: If the current player outleveled it, check if an alt needs it!
+                        if allTrivial and ThornCraftOptions.alts.showAlt then
+                            local altsWhoNeedIt = ns.GetAltsThatNeedItem(recipes)
+                            if #altsWhoNeedIt > 0 then
+                                -- An alt needs it! Override the trivial flag so it doesn't sell.
+                                allTrivial = false 
+                            end
+                        end
+                        
+                        -- If the player has the profession, ALL recipes are grey, AND no alts need it:
                         if allTrivial then
                             local _, _, _, _, _, _, _, _, _, _, itemSellPrice = C_Item.GetItemInfo(itemID)
                             
